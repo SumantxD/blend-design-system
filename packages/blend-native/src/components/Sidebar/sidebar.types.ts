@@ -157,6 +157,12 @@ export type SidebarNativeProps = {
      */
     isSmallScreen?: boolean
 
+    /**
+     * How the small-screen sidebar is presented: a left `SideDrawer` or a
+     * `BottomSheet`. Ignored on the rail. @default 'drawer'
+     */
+    mobilePresentation?: 'drawer' | 'sheet'
+
     accessibilityLabel?: string
     testID?: string
 }

@@ -26,6 +26,8 @@ import { useReduceMotion } from '../../motion/useReduceMotion'
 import { BlendNativeThemeContext } from '../../theme/BlendNativeProvider'
 import { Portal } from '../../overlay/portal'
 import { SideDrawer } from '../../overlay/drawer/SideDrawer'
+import { BottomSheet } from '../../overlay/sheet/BottomSheet'
+import { BottomSheetScrollable } from '../../overlay/sheet/SheetScrollable'
 import Block from '../../primitives/Block'
 import Pressable from '../../primitives/Pressable'
 import SingleSelect from '../SingleSelect/SingleSelect'
@@ -109,6 +111,7 @@ const Sidebar = forwardRef<RNView, SidebarNativeProps>(function Sidebar(
         defaultOpen = false,
         drawerWidth = SIDEBAR_METRICS.drawerWidth,
         isSmallScreen: isSmallScreenProp,
+        mobilePresentation = 'drawer',
         accessibilityLabel,
         testID,
     },
@@ -116,7 +119,7 @@ const Sidebar = forwardRef<RNView, SidebarNativeProps>(function Sidebar(
 ) {
     const { theme } = useContext(BlendNativeThemeContext)
     const palette = useMemo(() => getSidebarPalette(theme), [theme])
-    const { width: windowWidth } = useWindowDimensions()
+    const { width: windowWidth, height: windowHeight } = useWindowDimensions()
     const isSmallScreen =
         isSmallScreenProp ?? windowWidth < SIDEBAR_METRICS.mobileBreakpoint
     const reduceMotion = useReduceMotion()
@@ -334,23 +337,25 @@ const Sidebar = forwardRef<RNView, SidebarNativeProps>(function Sidebar(
                     ]}
                 />
             </Block>
-            <ScrollView
-                testID="sidebar-nav-scroll"
-                style={{ flex: 1 }}
-                contentContainerStyle={{
-                    gap: SIDEBAR_METRICS.sectionGap,
-                    paddingTop: 4,
-                    paddingBottom: 4,
-                    paddingLeft: 4,
-                    paddingRight: 4,
-                }}
-                onScroll={onNavScroll}
-                scrollEventThrottle={16}
-            >
-                {data.map((section, index) => (
-                    <SidebarSection key={index} section={section} />
-                ))}
-            </ScrollView>
+            <BottomSheetScrollable>
+                <ScrollView
+                    testID="sidebar-nav-scroll"
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{
+                        gap: SIDEBAR_METRICS.sectionGap,
+                        paddingTop: 4,
+                        paddingBottom: 4,
+                        paddingLeft: 4,
+                        paddingRight: 4,
+                    }}
+                    onScroll={onNavScroll}
+                    scrollEventThrottle={16}
+                >
+                    {data.map((section, index) => (
+                        <SidebarSection key={index} section={section} />
+                    ))}
+                </ScrollView>
+            </BottomSheetScrollable>
             {footer ? (
                 <Animated.View
                     style={[styles.footerSlot, footerSlotStyle]}
@@ -403,6 +408,32 @@ const Sidebar = forwardRef<RNView, SidebarNativeProps>(function Sidebar(
             />
         </Portal>
     )
+
+    if (isSmallScreen && mobilePresentation === 'sheet') {
+        return (
+            <>
+                <BottomSheet
+                    open={open}
+                    onClose={() => setOpen(false)}
+                    backgroundColor={palette.background}
+                    accessibilityLabel={
+                        accessibilityLabel ?? 'Sidebar navigation'
+                    }
+                    testID={testID}
+                >
+                    {/* Full sheet height; flexShrink fits it under the
+                        sheet's max height so the nav list scrolls. */}
+                    <View
+                        ref={ref}
+                        style={{ height: windowHeight, flexShrink: 1 }}
+                    >
+                        {navContent}
+                    </View>
+                </BottomSheet>
+                {mobileBottomNav}
+            </>
+        )
+    }
 
     if (isSmallScreen) {
         return (
